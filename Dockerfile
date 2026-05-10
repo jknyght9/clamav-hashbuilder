@@ -24,7 +24,7 @@ RUN mkdir -p /opt/tools && \
     rm /tmp/cus.zip
 
 # Create directories for signatures and output
-RUN mkdir -p /var/lib/clamav /opt/output /opt/config
+RUN mkdir -p /var/lib/clamav /opt/hashsets /opt/config
 
 # Copy configuration overrides
 COPY config/ /opt/config/

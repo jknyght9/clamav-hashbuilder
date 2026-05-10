@@ -3,6 +3,7 @@ services:
     build: .
     container_name: clamav-hashbuilder
     volumes:
-      - ./output:/opt/output
+      - ./hashsets:/opt/hashsets
+    environment:
+      - HASHBUILDER_FREQUENCY=24
     restart: unless-stopped
-    command: /bin/sh -c "while true; do /usr/local/bin/update_and_convert.sh; sleep 86400; done"

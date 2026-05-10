@@ -1,22 +1,31 @@
 # ClamAV Hashset Builder for Autopsy
 
-This project downloads, verifies, extracts, and builds an Autopsy hashset from the latest ClamAV signatures, including the unofficial signatures.
+This project downloads, verifies, extracts, and builds Autopsy hashsets from the latest ClamAV signatures, including the unofficial signatures.
 
-## 🚀 Quick Start
+## Quick Start
 
 ```sh
 # Build the container
 docker build -t clamav-hashbuilder .
 
 # Run the hash builder
-docker run --rm -v $(pwd)/output:/opt/output clamav-hashbuilder
+docker run --rm -v $(pwd)/hashsets:/opt/hashsets clamav-hashbuilder
 ```
 
 ## Output
 
-Once the builder is complete, two files will reside in the `outputs` folder: a CSV and TXT file. The CSV is a catalog of MD5 hashes and their respective IDs. The TXT file is the hash database you will need to import into Autopsy.
+Once the builder is complete, the following files will be in the `hashsets` directory:
 
-## ⚖️ Legal / License
+| File | Description |
+|------|-------------|
+| `clamav-md5.txt` | MD5 hash database (one hash per line, for Autopsy import) |
+| `clamav-md5.csv` | MD5 hashes with signature names (`hash,name`) |
+| `clamav-sha256.txt` | SHA-256 hash database (one hash per line) |
+| `clamav-sha256.csv` | SHA-256 hashes with signature names (`hash,name`) |
+
+Timestamped copies (e.g., `clamav-md5_20250510_123456.txt`) are also produced for each run.
+
+## Legal / License
 
 This project is open source and distributed under the MIT License.
 
@@ -24,7 +33,7 @@ This project is open source and distributed under the MIT License.
 
 ---
 
-## 👨‍💻 Author
+## Author
 
 Created by Jacob Stauffer | CISSP, GCFA, GREM, OSCP — Contributions and PRs welcome!
 
