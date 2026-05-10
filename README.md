@@ -16,12 +16,16 @@ docker run --rm -v $(pwd)/hashsets:/opt/hashsets clamav-hashbuilder
 
 Once the builder is complete, the following files will be in the `hashsets` directory:
 
-| File | Description |
-|------|-------------|
-| `clamav-md5.txt` | MD5 hash database (one hash per line, for Autopsy import) |
-| `clamav-md5.csv` | MD5 hashes with signature names (`hash,name`) |
-| `clamav-sha256.txt` | SHA-256 hash database (one hash per line) |
-| `clamav-sha256.csv` | SHA-256 hashes with signature names (`hash,name`) |
+| File | Source | Description |
+|------|--------|-------------|
+| `clamav-md5.txt` | ClamAV | MD5 hash database (one hash per line, for Autopsy import) |
+| `clamav-md5.csv` | ClamAV | MD5 hashes with signature names (`hash,name`) |
+| `clamav-sha256.txt` | ClamAV | SHA-256 hash database (one hash per line) |
+| `clamav-sha256.csv` | ClamAV | SHA-256 hashes with signature names (`hash,name`) |
+| `malwarebazaar-md5.txt` | MalwareBazaar | MD5 hashes from abuse.ch MalwareBazaar |
+| `malwarebazaar-md5.csv` | MalwareBazaar | MD5 hashes (`hash,MalwareBazaar`) |
+| `malwarebazaar-sha256.txt` | MalwareBazaar | SHA-256 hashes from abuse.ch MalwareBazaar |
+| `malwarebazaar-sha256.csv` | MalwareBazaar | SHA-256 hashes (`hash,MalwareBazaar`) |
 
 Timestamped copies (e.g., `clamav-md5_20250510_123456.txt`) are also produced for each run.
 
