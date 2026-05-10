@@ -30,7 +30,8 @@ RUN mkdir -p /var/lib/clamav /opt/hashsets /opt/config
 COPY config/ /opt/config/
 RUN mkdir -p /opt/work
 COPY scripts/update_and_convert.sh /usr/local/bin/update_and_convert.sh
-RUN chmod +x /usr/local/bin/update_and_convert.sh
+COPY scripts/hashlookup.sh /usr/local/bin/hashlookup
+RUN chmod +x /usr/local/bin/update_and_convert.sh /usr/local/bin/hashlookup
 
 RUN mkdir -p /etc/clamav-unofficial-sigs && \
     ln -s /opt/config/master.conf /etc/clamav-unofficial-sigs/master.conf && \

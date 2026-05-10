@@ -72,6 +72,24 @@ run_update() {
   mb_md5_count=$(wc -l < /tmp/mb_md5.txt | tr -d ' ')
   mb_sha256_count=$(wc -l < /tmp/mb_sha256.txt | tr -d ' ')
 
+  echo "=== Downloading ThreatFox hashes ==="
+
+  # ThreatFox full dumps are ZIP archives containing JSON with malware family attribution
+  curl -sS --max-time 120 -o /tmp/tf_full_md5.zip https://threatfox.abuse.ch/export/json/md5/full/ || true
+  unzip -p /tmp/tf_full_md5.zip 2>/dev/null | \
+    jq -r 'to_entries[].value[] | select(.threat_type == "payload") | .ioc_value + "," + .malware_printable' | \
+    sort -u > /tmp/tf_md5.csv || true
+  rm -f /tmp/tf_full_md5.zip
+
+  curl -sS --max-time 120 -o /tmp/tf_full_sha256.zip https://threatfox.abuse.ch/export/json/sha256/full/ || true
+  unzip -p /tmp/tf_full_sha256.zip 2>/dev/null | \
+    jq -r 'to_entries[].value[] | select(.threat_type == "payload") | .ioc_value + "," + .malware_printable' | \
+    sort -u > /tmp/tf_sha256.csv || true
+  rm -f /tmp/tf_full_sha256.zip
+
+  tf_md5_count=$(wc -l < /tmp/tf_md5.csv | tr -d ' ')
+  tf_sha256_count=$(wc -l < /tmp/tf_sha256.csv | tr -d ' ')
+
   echo "=== Writing output files ==="
   timestamp=$(date +"%Y%m%d_%H%M%S")
 
@@ -104,16 +122,32 @@ run_update() {
   cp /opt/hashsets/malwarebazaar-sha256.txt "/opt/hashsets/malwarebazaar-sha256_${timestamp}.txt"
   cp /opt/hashsets/malwarebazaar-sha256.csv "/opt/hashsets/malwarebazaar-sha256_${timestamp}.csv"
 
+  # ThreatFox — stable filenames (CSV has malware family, TXT is hash-only)
+  cp /tmp/tf_md5.csv /opt/hashsets/threatfox-md5.csv
+  cut -d',' -f1 /tmp/tf_md5.csv > /opt/hashsets/threatfox-md5.txt
+
+  cp /tmp/tf_sha256.csv /opt/hashsets/threatfox-sha256.csv
+  cut -d',' -f1 /tmp/tf_sha256.csv > /opt/hashsets/threatfox-sha256.txt
+
+  # ThreatFox — timestamped copies
+  cp /opt/hashsets/threatfox-md5.csv "/opt/hashsets/threatfox-md5_${timestamp}.csv"
+  cp /opt/hashsets/threatfox-md5.txt "/opt/hashsets/threatfox-md5_${timestamp}.txt"
+  cp /opt/hashsets/threatfox-sha256.csv "/opt/hashsets/threatfox-sha256_${timestamp}.csv"
+  cp /opt/hashsets/threatfox-sha256.txt "/opt/hashsets/threatfox-sha256_${timestamp}.txt"
+
   # Cleanup temp files
   rm -f /tmp/md5_hdb.csv /tmp/md5_mdb.csv /tmp/md5_merged.csv
   rm -f /tmp/sha256_hsb.csv /tmp/sha256_msb.csv /tmp/sha256_merged.csv
   rm -f /tmp/mb_md5.txt /tmp/mb_sha256.txt
+  rm -f /tmp/tf_md5.csv /tmp/tf_sha256.csv
 
   echo "=== Stats ==="
-  echo "ClamAV MD5:          $md5_before total -> $md5_after unique"
-  echo "ClamAV SHA-256:      $sha256_before total -> $sha256_after unique"
-  echo "MalwareBazaar MD5:   $mb_md5_count"
+  echo "ClamAV MD5:            $md5_before total -> $md5_after unique"
+  echo "ClamAV SHA-256:        $sha256_before total -> $sha256_after unique"
+  echo "MalwareBazaar MD5:     $mb_md5_count"
   echo "MalwareBazaar SHA-256: $mb_sha256_count"
+  echo "ThreatFox MD5:         $tf_md5_count"
+  echo "ThreatFox SHA-256:     $tf_sha256_count"
   echo ""
   echo "=== Output files ==="
   ls -lh /opt/hashsets/
