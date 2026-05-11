@@ -8,6 +8,7 @@ RUN apk add --no-cache \
     curl \
     unzip \
     jq \
+    python3 \
     coreutils \
     tzdata \
     ncurses \
@@ -31,7 +32,8 @@ COPY config/ /opt/config/
 RUN mkdir -p /opt/work
 COPY scripts/update_and_convert.sh /usr/local/bin/update_and_convert.sh
 COPY scripts/hashlookup.sh /usr/local/bin/hashlookup
-RUN chmod +x /usr/local/bin/update_and_convert.sh /usr/local/bin/hashlookup
+COPY scripts/parse_malwarebazaar.py /usr/local/bin/parse_malwarebazaar.py
+RUN chmod +x /usr/local/bin/update_and_convert.sh /usr/local/bin/hashlookup /usr/local/bin/parse_malwarebazaar.py
 
 RUN mkdir -p /etc/clamav-unofficial-sigs && \
     ln -s /opt/config/master.conf /etc/clamav-unofficial-sigs/master.conf && \

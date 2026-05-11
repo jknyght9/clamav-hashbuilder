@@ -23,9 +23,9 @@ Once the builder is complete, the following files will be in the `hashsets` dire
 | `clamav-sha256.txt` | ClamAV | SHA-256 hash database (one hash per line) |
 | `clamav-sha256.csv` | ClamAV | SHA-256 hashes with signature names (`hash,name`) |
 | `malwarebazaar-md5.txt` | MalwareBazaar | MD5 hashes from abuse.ch MalwareBazaar |
-| `malwarebazaar-md5.csv` | MalwareBazaar | MD5 hashes (`hash,MalwareBazaar`) |
+| `malwarebazaar-md5.csv` | MalwareBazaar | MD5 hashes with malware family (`hash,AgentTesla`) |
 | `malwarebazaar-sha256.txt` | MalwareBazaar | SHA-256 hashes from abuse.ch MalwareBazaar |
-| `malwarebazaar-sha256.csv` | MalwareBazaar | SHA-256 hashes (`hash,MalwareBazaar`) |
+| `malwarebazaar-sha256.csv` | MalwareBazaar | SHA-256 hashes with malware family (`hash,Mirai`) |
 | `threatfox-md5.txt` | ThreatFox | MD5 hashes from abuse.ch ThreatFox |
 | `threatfox-md5.csv` | ThreatFox | MD5 hashes with malware family (`hash,AsyncRAT`) |
 | `threatfox-sha256.txt` | ThreatFox | SHA-256 hashes from abuse.ch ThreatFox |
