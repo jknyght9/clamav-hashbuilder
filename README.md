@@ -33,6 +33,10 @@ Once the builder is complete, the following files will be in the `hashsets` dire
 
 Timestamped copies (e.g., `clamav-md5_20250510_123456.txt`) are also produced for each run.
 
+### Autopsy Index Files
+
+Each MD5 `.txt` hashset is pre-indexed using The Sleuth Kit's `hfind`, producing `.idx` files (e.g., `clamav-md5.txt-md5.idx`). When importing a `.txt` file into Autopsy, it detects the existing index and skips the indexing step — hashsets are ready to use immediately. Import them as **"Notable"** (known bad) hash sets.
+
 ## Hash Lookup
 
 When Autopsy flags a file, use the lookup script to identify the threat:
