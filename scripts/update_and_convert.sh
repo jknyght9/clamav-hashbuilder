@@ -58,19 +58,38 @@ run_update() {
 
   echo "=== Downloading MalwareBazaar hashes ==="
 
-  # Full dumps are ZIP archives — download, extract, filter
-  curl -sS --max-time 300 -o /tmp/mb_full_md5.zip https://bazaar.abuse.ch/export/txt/md5/full/ || true
-  unzip -p /tmp/mb_full_md5.zip 2>/dev/null | \
-    tr -d '\r' | grep -v '^#' | grep -E '^[0-9a-fA-F]{32}$' | sort -u > /tmp/mb_md5.txt || true
-  rm -f /tmp/mb_full_md5.zip
+  # Full CSV dump includes signature/malware family attribution
+  # Format: "first_seen","sha256","md5","sha1","reporter","filename","filetype","mime","signature",...
+  curl -sS --max-time 300 -o /tmp/mb_full.zip https://bazaar.abuse.ch/export/csv/full/ || true
+  unzip -p /tmp/mb_full.zip 2>/dev/null | tr -d '\r' | grep -v '^#' | \
+    python3 /usr/local/bin/parse_malwarebazaar.py | sort -u > /tmp/mb_parsed.csv || true
+  rm -f /tmp/mb_full.zip
 
-  curl -sS --max-time 300 -o /tmp/mb_full_sha256.zip https://bazaar.abuse.ch/export/txt/sha256/full/ || true
-  unzip -p /tmp/mb_full_sha256.zip 2>/dev/null | \
-    tr -d '\r' | grep -v '^#' | grep -E '^[0-9a-fA-F]{64}$' | sort -u > /tmp/mb_sha256.txt || true
-  rm -f /tmp/mb_full_sha256.zip
+  # Split into MD5 and SHA-256 CSVs (hash,signature format)
+  grep '^md5,' /tmp/mb_parsed.csv | cut -d',' -f2,3 | sort -u > /tmp/mb_md5.csv || true
+  grep '^sha256,' /tmp/mb_parsed.csv | cut -d',' -f2,3 | sort -u > /tmp/mb_sha256.csv || true
+  rm -f /tmp/mb_parsed.csv
 
-  mb_md5_count=$(wc -l < /tmp/mb_md5.txt | tr -d ' ')
-  mb_sha256_count=$(wc -l < /tmp/mb_sha256.txt | tr -d ' ')
+  mb_md5_count=$(wc -l < /tmp/mb_md5.csv | tr -d ' ')
+  mb_sha256_count=$(wc -l < /tmp/mb_sha256.csv | tr -d ' ')
+
+  echo "=== Downloading ThreatFox hashes ==="
+
+  # ThreatFox full dumps are ZIP archives containing JSON with malware family attribution
+  curl -sS --max-time 120 -o /tmp/tf_full_md5.zip https://threatfox.abuse.ch/export/json/md5/full/ || true
+  unzip -p /tmp/tf_full_md5.zip 2>/dev/null | \
+    jq -r 'to_entries[].value[] | select(.threat_type == "payload") | .ioc_value + "," + .malware_printable' | \
+    sort -u > /tmp/tf_md5.csv || true
+  rm -f /tmp/tf_full_md5.zip
+
+  curl -sS --max-time 120 -o /tmp/tf_full_sha256.zip https://threatfox.abuse.ch/export/json/sha256/full/ || true
+  unzip -p /tmp/tf_full_sha256.zip 2>/dev/null | \
+    jq -r 'to_entries[].value[] | select(.threat_type == "payload") | .ioc_value + "," + .malware_printable' | \
+    sort -u > /tmp/tf_sha256.csv || true
+  rm -f /tmp/tf_full_sha256.zip
+
+  tf_md5_count=$(wc -l < /tmp/tf_md5.csv | tr -d ' ')
+  tf_sha256_count=$(wc -l < /tmp/tf_sha256.csv | tr -d ' ')
 
   echo "=== Writing output files ==="
   timestamp=$(date +"%Y%m%d_%H%M%S")
@@ -91,29 +110,45 @@ run_update() {
   cp /opt/hashsets/clamav-sha256.csv "/opt/hashsets/clamav-sha256_${timestamp}.csv"
   cp /opt/hashsets/clamav-sha256.txt "/opt/hashsets/clamav-sha256_${timestamp}.txt"
 
-  # MalwareBazaar — stable filenames
-  cp /tmp/mb_md5.txt /opt/hashsets/malwarebazaar-md5.txt
-  awk '{print $0",MalwareBazaar"}' /tmp/mb_md5.txt > /opt/hashsets/malwarebazaar-md5.csv
+  # MalwareBazaar — stable filenames (CSV has malware family from signature field)
+  cp /tmp/mb_md5.csv /opt/hashsets/malwarebazaar-md5.csv
+  cut -d',' -f1 /tmp/mb_md5.csv > /opt/hashsets/malwarebazaar-md5.txt
 
-  cp /tmp/mb_sha256.txt /opt/hashsets/malwarebazaar-sha256.txt
-  awk '{print $0",MalwareBazaar"}' /tmp/mb_sha256.txt > /opt/hashsets/malwarebazaar-sha256.csv
+  cp /tmp/mb_sha256.csv /opt/hashsets/malwarebazaar-sha256.csv
+  cut -d',' -f1 /tmp/mb_sha256.csv > /opt/hashsets/malwarebazaar-sha256.txt
 
   # MalwareBazaar — timestamped copies
-  cp /opt/hashsets/malwarebazaar-md5.txt "/opt/hashsets/malwarebazaar-md5_${timestamp}.txt"
   cp /opt/hashsets/malwarebazaar-md5.csv "/opt/hashsets/malwarebazaar-md5_${timestamp}.csv"
-  cp /opt/hashsets/malwarebazaar-sha256.txt "/opt/hashsets/malwarebazaar-sha256_${timestamp}.txt"
+  cp /opt/hashsets/malwarebazaar-md5.txt "/opt/hashsets/malwarebazaar-md5_${timestamp}.txt"
   cp /opt/hashsets/malwarebazaar-sha256.csv "/opt/hashsets/malwarebazaar-sha256_${timestamp}.csv"
+  cp /opt/hashsets/malwarebazaar-sha256.txt "/opt/hashsets/malwarebazaar-sha256_${timestamp}.txt"
+
+  # ThreatFox — stable filenames (CSV has malware family, TXT is hash-only)
+  cp /tmp/tf_md5.csv /opt/hashsets/threatfox-md5.csv
+  cut -d',' -f1 /tmp/tf_md5.csv > /opt/hashsets/threatfox-md5.txt
+
+  cp /tmp/tf_sha256.csv /opt/hashsets/threatfox-sha256.csv
+  cut -d',' -f1 /tmp/tf_sha256.csv > /opt/hashsets/threatfox-sha256.txt
+
+  # ThreatFox — timestamped copies
+  cp /opt/hashsets/threatfox-md5.csv "/opt/hashsets/threatfox-md5_${timestamp}.csv"
+  cp /opt/hashsets/threatfox-md5.txt "/opt/hashsets/threatfox-md5_${timestamp}.txt"
+  cp /opt/hashsets/threatfox-sha256.csv "/opt/hashsets/threatfox-sha256_${timestamp}.csv"
+  cp /opt/hashsets/threatfox-sha256.txt "/opt/hashsets/threatfox-sha256_${timestamp}.txt"
 
   # Cleanup temp files
   rm -f /tmp/md5_hdb.csv /tmp/md5_mdb.csv /tmp/md5_merged.csv
   rm -f /tmp/sha256_hsb.csv /tmp/sha256_msb.csv /tmp/sha256_merged.csv
-  rm -f /tmp/mb_md5.txt /tmp/mb_sha256.txt
+  rm -f /tmp/mb_md5.csv /tmp/mb_sha256.csv
+  rm -f /tmp/tf_md5.csv /tmp/tf_sha256.csv
 
   echo "=== Stats ==="
-  echo "ClamAV MD5:          $md5_before total -> $md5_after unique"
-  echo "ClamAV SHA-256:      $sha256_before total -> $sha256_after unique"
-  echo "MalwareBazaar MD5:   $mb_md5_count"
+  echo "ClamAV MD5:            $md5_before total -> $md5_after unique"
+  echo "ClamAV SHA-256:        $sha256_before total -> $sha256_after unique"
+  echo "MalwareBazaar MD5:     $mb_md5_count"
   echo "MalwareBazaar SHA-256: $mb_sha256_count"
+  echo "ThreatFox MD5:         $tf_md5_count"
+  echo "ThreatFox SHA-256:     $tf_sha256_count"
   echo ""
   echo "=== Output files ==="
   ls -lh /opt/hashsets/
