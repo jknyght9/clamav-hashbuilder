@@ -9,6 +9,7 @@ RUN apk add --no-cache \
     unzip \
     jq \
     python3 \
+    sleuthkit \
     coreutils \
     tzdata \
     ncurses \
