@@ -136,6 +136,13 @@ run_update() {
   cp /opt/hashsets/threatfox-sha256.csv "/opt/hashsets/threatfox-sha256_${timestamp}.csv"
   cp /opt/hashsets/threatfox-sha256.txt "/opt/hashsets/threatfox-sha256_${timestamp}.txt"
 
+  echo "=== Indexing hashsets for Autopsy ==="
+  for txt in /opt/hashsets/*-md5.txt; do
+    [ -f "$txt" ] || continue
+    echo "  Indexing $txt..."
+    hfind -i md5sum "$txt" || true
+  done
+
   # Cleanup temp files
   rm -f /tmp/md5_hdb.csv /tmp/md5_mdb.csv /tmp/md5_merged.csv
   rm -f /tmp/sha256_hsb.csv /tmp/sha256_msb.csv /tmp/sha256_merged.csv
